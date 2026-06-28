@@ -1,12 +1,12 @@
 $body = @{
     repository = @{
-        full_name = "test-org/test-repo"
+        full_name = "EshyaYadav/devpulse"
     }
     head_commit = @{
         id = "abc123def456"
         message = "feat: added new database connection with hardcoded password. Ugh, im so tired and exhausted working late nights."
         author = @{
-            name = "Alex Developer"
+            name = "Eshya Yadav"
         }
         added = @("src/db/connection.js")
         modified = @("package.json")
@@ -21,5 +21,6 @@ $headers = @{
     "x-github-delivery" = "sim-$(Get-Date -UFormat %s)"
 }
 
-Invoke-RestMethod -Uri "http://localhost:3001/webhook/github" -Method Post -Headers $headers -Body $body
+# Yahan humne aapka live Vercel link aur sahi path (/webhooks/github) daal diya hai
+Invoke-RestMethod -Uri "https://devpulse-murex.vercel.app/webhooks/github" -Method Post -Headers $headers -Body $body
 Write-Host "`nWebhook simulated."
