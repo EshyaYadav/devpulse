@@ -1,25 +1,18 @@
-import { callLLM } from '../callLLM.js';
+const { callLLM } = require('../callLLM.js');
 
-export async function runProductivityAgent(commitMessage, author, timeOfDay, commitSize) {
-  const systemPrompt = `You are an HR & Productivity Analyst. Look at the commit size, time of day, and message tone to assess burnout risk.
+async function runProductivityAgent(diff) {
+  const systemPrompt = `You are a strict Productivity Sentinel. Analyze the provided git diff for unoptimized code, redundant logic, deeply nested loops, or performance bottlenecks.
 Output ONLY valid JSON in this exact format:
 {
-  "risk_level": "low|medium|high",
-  "observation": "...",
-  "tip": "..."
-}`;
-
-  const userPrompt = `Commit Details:
-- Author: ${author}
-- Message: ${commitMessage}
-- Time of Day (UTC): ${timeOfDay}
-- Files Changed: ${commitSize}
-
-Analyze the burnout risk based on this.`;
-
-  console.log(`[ProductivityAgent] Started analysis for ${author}...`);
-  const result = await callLLM(systemPrompt, userPrompt);
-  console.log(`[ProductivityAgent] Finished analysis.`);
-  
-  return result || { risk_level: 'low', observation: 'Normal activity', tip: 'Keep up the good work.' };
+  "severity": "low|medium|high|critical",
+  "issues": [ { "type": "...", "description": "...", "file": "..." } ],
+  "recommendation": "..."
 }
+If no issues are found, set severity to "low" and issues to [].`;
+
+  const userPrompt = `Here is the diff to analyze:\n\n${diff}`;
+  const result = await callLLM(systemPrompt, userPrompt);
+  return result || { severity: 'low', issues: [], recommendation: 'Failed to analyze.' };
+}
+
+module.exports = { runProductivityAgent };

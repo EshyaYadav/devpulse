@@ -1,106 +1,78 @@
-import { getDb, initDb } from '../../lib/db.js';
-import { runSecurityAgent } from '../../lib/agents/securityAgent.js';
-import { runArchitectureAgent } from '../../lib/agents/architectureAgent.js';
-import { runProductivityAgent } from '../../lib/agents/productivityAgent.js';
+const { getDb, initDb } = require('../../lib/db.js');
+const { runSecurityAgent } = require('../../lib/agents/securityAgent.js');
+const { runArchitectureAgent } = require('../../lib/agents/architectureAgent.js');
+const { runProductivityAgent } = require('../../lib/agents/productivityAgent.js');
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Init DB tables (no-op if they already exist)
-  try {
-    await initDb();
-  } catch (err) {
-    console.error('DB init warning:', err.message);
-  }
-
-  const event = req.headers['x-github-event'];
+  const githubEvent = req.headers['x-github-event'];
   const deliveryId = req.headers['x-github-delivery'];
 
-  if (event === 'ping') {
-    return res.status(200).send('pong');
-  }
-
-  if (event !== 'push') {
-    return res.status(200).send('Ignoring non-push event');
+  if (githubEvent !== 'push') {
+    return res.status(200).json({ message: 'Event ignored' });
   }
 
   const payload = req.body;
-  const repoName = payload.repository?.full_name || 'unknown/repo';
-  const headCommit = payload.head_commit;
-
-  if (!headCommit) {
-    return res.status(200).send('No head commit found');
+  
+  if (!payload || !payload.repository || !payload.head_commit) {
+    return res.status(400).json({ error: 'Invalid payload' });
   }
 
-  const author = headCommit.author?.name || 'unknown';
-  const message = headCommit.message || '';
-  const hash = headCommit.id || '';
+  const repoName = payload.repository.full_name;
+  const commit = payload.head_commit;
+  const author = commit.author ? commit.author.name : 'Unknown';
   
-  const added = headCommit.added || [];
-  const modified = headCommit.modified || [];
-  const removed = headCommit.removed || [];
-  const filesChanged = [...added, ...modified, ...removed];
-  const filesChangedCount = filesChanged.length;
-  
-  const diff = payload.simulated_diff || `Files added: ${added.join(', ')}\nFiles modified: ${modified.join(', ')}\nFiles removed: ${removed.join(', ')}`;
-
   console.log(`[Webhook] Processing push event from ${repoName} by ${author}`);
 
-  const db = getDb();
-  
   try {
-    // 1. Insert Event
-    const eventResult = await db.execute({
-      sql: `INSERT INTO events (github_delivery_id, repo_name, commit_hash, commit_message, author, files_changed, diff)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    const diffText = payload.simulated_diff || `Files changed: ${commit.added.concat(commit.modified).join(', ')}`;
+    
+    const [security, architecture, productivity] = await Promise.all([
+      runSecurityAgent(diffText).catch(e => { console.error('SecAgent Error', e); return null; }),
+      runArchitectureAgent(diffText).catch(e => { console.error('ArchAgent Error', e); return null; }),
+      runProductivityAgent(diffText).catch(e => { console.error('ProdAgent Error', e); return null; })
+    ]);
+
+    const metadata = JSON.stringify({
+      security,
+      architecture,
+      productivity,
+      files: {
+        added: commit.added,
+        modified: commit.modified,
+        removed: commit.removed
+      }
+    });
+
+    try {
+      await initDb();
+    } catch (e) {
+      console.warn("Could not init DB, maybe already inited?", e.message);
+    }
+
+    const db = getDb();
+    
+    await db.execute({
+      sql: `INSERT INTO activity (id, type, description, author, repo, metadata) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
       args: [
-        deliveryId || `simulated-${Date.now()}`,
-        repoName,
-        hash,
-        message,
+        deliveryId || Date.now().toString(),
+        'push',
+        commit.message,
         author,
-        JSON.stringify(filesChanged),
-        diff
+        repoName,
+        metadata
       ]
     });
-    
-    const eventId = Number(eventResult.lastInsertRowid);
-    console.log(`[Webhook] Event saved with ID ${eventId}. Running 3 agents in parallel...`);
 
-    // 2. Run all 3 Agents in Parallel (this is why no queue is needed!)
-    const [securityResult, architectureResult, productivityResult] = await Promise.all([
-      runSecurityAgent(diff),
-      runArchitectureAgent(diff),
-      runProductivityAgent(message, author, new Date().toISOString(), filesChangedCount)
-    ]);
-
-    // 3. Save all 3 Results at once
-    await db.batch([
-      {
-        sql: `INSERT INTO agent_results (event_id, agent_name, result) VALUES (?, ?, ?)`,
-        args: [eventId, 'security', JSON.stringify(securityResult)]
-      },
-      {
-        sql: `INSERT INTO agent_results (event_id, agent_name, result) VALUES (?, ?, ?)`,
-        args: [eventId, 'architecture', JSON.stringify(architectureResult)]
-      },
-      {
-        sql: `INSERT INTO agent_results (event_id, agent_name, result) VALUES (?, ?, ?)`,
-        args: [eventId, 'productivity', JSON.stringify(productivityResult)]
-      }
-    ]);
-    
-    console.log(`[Webhook] Done! Event ID ${eventId} fully processed.`);
-    return res.status(200).json({ success: true, eventId });
-
-  } catch (err) {
-    if (err.message?.includes('UNIQUE constraint failed')) {
-      console.log(`[Webhook] Duplicate delivery ID ignored.`);
-      return res.status(200).send('Duplicate');
-    }
-    console.error(`[Webhook] Error:`, err);
-    return res.status(500).json({ error: err.message });
+    res.status(200).json({ success: true, message: 'Processed successfully' });
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+module.exports = handler;
