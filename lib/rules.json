@@ -1,9 +1,0 @@
-{
-  "rules": [
-    "Files should be modular and not exceed 500 lines of code.",
-    "Variable and function names should be descriptive and use camelCase.",
-    "Ensure proper error handling with try-catch blocks.",
-    "Avoid deep nesting (more than 3 levels).",
-    "Keep functions focused on a single responsibility."
-  ]
-}
