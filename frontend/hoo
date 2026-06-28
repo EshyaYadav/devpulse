@@ -1,1 +1,0 @@
-git add . && git commit -m "Fix: updated vercel routing and config" && git push origin main
