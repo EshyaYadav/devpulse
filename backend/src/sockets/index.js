@@ -5,7 +5,7 @@ let io;
 function initSockets(server) {
   io = new Server(server, {
     cors: {
-      origin: "*", // allow all for local dev
+      origin: process.env.FRONTEND_URL || "*", // allow all for local dev, specific origin for prod
       methods: ["GET", "POST"]
     }
   });

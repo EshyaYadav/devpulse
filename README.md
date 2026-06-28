@@ -17,7 +17,48 @@
 - Node.js (v18+)
 - A Groq API Key (Free tier)
 
-## Setup Instructions
+## Deploy for Free (Render + Vercel)
+
+You can deploy this entire stack for **₹0** using Render and Vercel free tiers!
+
+> **Note on SQLite Storage:** The Render free tier uses ephemeral disk storage. This means the SQLite database will reset on every redeploy or server restart. This is perfectly fine for a live demo or testing, but it is not suitable for permanent data storage in a production app.
+
+### 1. Deploy the Backend on Render.com
+
+1. Sign up/Log in to [Render.com](https://render.com).
+2. Click **New** -> **Blueprint** (this uses the `render.yaml` file in the repo).
+3. Connect your GitHub account and select this repository.
+4. Render will automatically detect the backend settings from `render.yaml`.
+5. Under the **Environment Variables** section, you will be prompted to provide values for:
+   - `GROQ_API_KEY`: Your Groq API key.
+   - `WEBHOOK_SECRET`: A random string you make up (e.g., `my_secret_123`). You will need this for GitHub later.
+   - `FRONTEND_URL`: Set this to your existing Vercel frontend URL: `https://devpulse-murex.vercel.app`
+6. Click **Apply** or **Create Web Service**. Wait for the deployment to finish and copy your new backend URL (e.g., `https://devpulse-backend-xxxx.onrender.com`).
+
+### 2. Update the Frontend on Vercel
+
+1. Go to your [Vercel Dashboard](https://vercel.com/dashboard) and select your existing `devpulse-murex` project.
+2. Navigate to **Settings** -> **Environment Variables**.
+3. Add a new variable:
+   - **Key**: `VITE_BACKEND_URL`
+   - **Value**: Your Render backend URL (e.g., `https://devpulse-backend-xxxx.onrender.com`)
+4. Click **Save**.
+5. Go to the **Deployments** tab. Click the three dots next to your latest deployment and select **Redeploy**. This builds the frontend with the new backend URL.
+
+### 3. Create the GitHub Webhook
+
+1. Go to your GitHub repository on GitHub.com.
+2. Click **Settings** -> **Webhooks** -> **Add webhook**.
+3. Fill in the fields:
+   - **Payload URL**: Your Render backend URL + `/webhook/github` (e.g., `https://devpulse-backend-xxxx.onrender.com/webhook/github`)
+   - **Content type**: `application/json`
+   - **Secret**: The exact same string you used for `WEBHOOK_SECRET` on Render (e.g., `my_secret_123`).
+   - **Which events would you like to trigger this webhook?**: Select "Just the push event."
+4. Click **Add webhook**.
+
+Real commits pushed to your repository will now trigger live analysis on your deployed dashboard!
+
+## Local Setup Instructions
 
 ### 1. Backend Setup
 

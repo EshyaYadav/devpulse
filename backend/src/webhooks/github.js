@@ -5,11 +5,22 @@ const { db } = require('../db/schema');
 const router = express.Router();
 
 router.post('/github', express.json(), (req, res) => {
-  // Simple signature verification (if secret is provided in env)
-  // For this exercise, we will just accept the payload if secret is empty.
   const signature = req.headers['x-hub-signature-256'];
   const event = req.headers['x-github-event'];
   const deliveryId = req.headers['x-github-delivery'];
+
+  const secret = process.env.WEBHOOK_SECRET;
+  if (secret) {
+    if (!signature) {
+      return res.status(401).send('No signature provided');
+    }
+    const hmac = crypto.createHmac('sha256', secret);
+    const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
+    
+    if (signature !== digest) {
+      return res.status(401).send('Signature mismatch');
+    }
+  }
 
   if (event === 'ping') {
     return res.status(200).send('pong');

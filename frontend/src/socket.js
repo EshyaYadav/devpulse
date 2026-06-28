@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
 
-// Connect to backend server on port 3001
-export const socket = io('http://localhost:3001');
+// Connect to backend server using environment variable or fallback to localhost
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+export const socket = io(backendUrl);
