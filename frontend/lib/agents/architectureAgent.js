@@ -1,18 +1,22 @@
-const { callLLM } = require('../callLLM');
+import { callLLM } from '../callLLM.js';
+
+const rules = {
+  rules: [
+    "Files should be modular and not exceed 500 lines of code.",
+    "Variable and function names should be descriptive and use camelCase.",
+    "Ensure proper error handling with try-catch blocks.",
+    "Avoid deep nesting (more than 3 levels).",
+    "Keep functions focused on a single responsibility."
+  ]
+};
 
 
-async function runArchitectureAgent(diff) {
-  let rules = [];
-  try {
-    const rulesData = require('../rules.json');
-    rules = rulesData.rules || [];
-  } catch (e) {
-    console.error('Could not read rules.json', e);
-  }
+export async function runArchitectureAgent(diff) {
+  const ruleList = rules.rules || [];
 
   const systemPrompt = `You are a strict Architecture Reviewer. Check code organization and naming against the provided rules.
 Rules:
-${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+${ruleList.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
 Output ONLY valid JSON in this exact format:
 {
@@ -30,5 +34,3 @@ If no issues, set score to 100 and violations to [].`;
   
   return result || { compliance_score: 100, violations: [], suggestion: 'Failed to analyze.' };
 }
-
-module.exports = { runArchitectureAgent };

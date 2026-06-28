@@ -1,6 +1,6 @@
-const { callLLM } = require('../callLLM');
+import { callLLM } from '../callLLM.js';
 
-async function runSecurityAgent(diff) {
+export async function runSecurityAgent(diff) {
   const systemPrompt = `You are a strict Security Sentinel. Analyze the provided git diff for secrets, hardcoded API keys, passwords, and SQLi/XSS-prone patterns. 
 Output ONLY valid JSON in this exact format:
 {
@@ -18,5 +18,3 @@ If no issues are found, set severity to "low" and issues to [].`;
   
   return result || { severity: 'low', issues: [], recommendation: 'Failed to analyze.' };
 }
-
-module.exports = { runSecurityAgent };

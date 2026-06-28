@@ -1,6 +1,6 @@
-const { callLLM } = require('../callLLM');
+import { callLLM } from '../callLLM.js';
 
-async function runProductivityAgent(commitMessage, author, timeOfDay, commitSize) {
+export async function runProductivityAgent(commitMessage, author, timeOfDay, commitSize) {
   const systemPrompt = `You are an HR & Productivity Analyst. Look at the commit size, time of day, and message tone to assess burnout risk.
 Output ONLY valid JSON in this exact format:
 {
@@ -23,5 +23,3 @@ Analyze the burnout risk based on this.`;
   
   return result || { risk_level: 'low', observation: 'Normal activity', tip: 'Keep up the good work.' };
 }
-
-module.exports = { runProductivityAgent };

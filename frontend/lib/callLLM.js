@@ -1,9 +1,9 @@
 // Environment variables are provided by Vercel
 
-async function callLLM(systemPrompt, userPrompt) {
+export async function callLLM(systemPrompt, userPrompt) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error('GROQ_API_KEY is missing from .env');
+    console.error('GROQ_API_KEY is missing');
     return null;
   }
 
@@ -39,5 +39,3 @@ async function callLLM(systemPrompt, userPrompt) {
     return null;
   }
 }
-
-module.exports = { callLLM };

@@ -1,4 +1,4 @@
-const { getDb } = require('../lib/db');
+import { getDb } from '../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -38,11 +38,11 @@ export default async function handler(req, res) {
       try {
         resultsByEvent[row.event_id][row.agent_name] = JSON.parse(row.result);
       } catch (e) {
-        // invalid JSON
+        // invalid JSON, skip
       }
     }
 
-    // Format output exactly like the old socket payload
+    // Format output to match the expected dashboard shape
     const payload = eventsResult.rows.map(row => {
       let filesCount = 0;
       try { filesCount = JSON.parse(row.files_changed || '[]').length; } catch(e){}
@@ -65,11 +65,10 @@ export default async function handler(req, res) {
     return res.status(200).json(payload);
 
   } catch (err) {
-    // If table doesn't exist yet, just return empty
-    if (err.message.includes('no such table')) {
+    if (err.message?.includes('no such table')) {
       return res.status(200).json([]);
     }
     console.error(`[Activity API] Error:`, err);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ error: err.message });
   }
 }
