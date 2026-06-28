@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client/http';
+import { createClient } from '@libsql/client/web';
 
 export function getDb() {
   const url = process.env.TURSO_DATABASE_URL;
