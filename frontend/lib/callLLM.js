@@ -1,5 +1,4 @@
-const dotenv = require('dotenv');
-dotenv.config({ path: require('path').resolve(__dirname, '../../.env') });
+// Environment variables are provided by Vercel
 
 async function callLLM(systemPrompt, userPrompt) {
   const apiKey = process.env.GROQ_API_KEY;

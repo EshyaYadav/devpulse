@@ -1,6 +1,0 @@
-node_modules
-.env
-devpulse.db
-devpulse.db-journal
-devpulse.db-shm
-devpulse.db-wal

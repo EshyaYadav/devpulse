@@ -1,4 +1,4 @@
-const { callLLM } = require('../llm/callLLM');
+const { callLLM } = require('../callLLM');
 
 async function runSecurityAgent(diff) {
   const systemPrompt = `You are a strict Security Sentinel. Analyze the provided git diff for secrets, hardcoded API keys, passwords, and SQLi/XSS-prone patterns. 

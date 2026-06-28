@@ -1,4 +1,4 @@
-const { callLLM } = require('../llm/callLLM');
+const { callLLM } = require('../callLLM');
 
 async function runProductivityAgent(commitMessage, author, timeOfDay, commitSize) {
   const systemPrompt = `You are an HR & Productivity Analyst. Look at the commit size, time of day, and message tone to assess burnout risk.

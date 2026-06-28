@@ -1,12 +1,10 @@
-const { callLLM } = require('../llm/callLLM');
-const fs = require('fs');
-const path = require('path');
+const { callLLM } = require('../callLLM');
+
 
 async function runArchitectureAgent(diff) {
-  const rulesPath = path.join(__dirname, '../rules.json');
   let rules = [];
   try {
-    const rulesData = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
+    const rulesData = require('../rules.json');
     rules = rulesData.rules || [];
   } catch (e) {
     console.error('Could not read rules.json', e);
